@@ -168,25 +168,32 @@ html_theme_path = ['a-plus-rst-tools/theme']
 
 ### 1. Graded questionnaire
 
-The questionnaire directive arguments define the exercise key and max points
-with the optional difficulty. For example, `.. questionnaire:: 1 A50` sets key `1`,
-max points `50` and difficulty `A`.
-The questionnaire directive accepts the following options:
+The questionnaire directive arguments define the exercise key and optional max points
+with the difficulty. For example, `.. questionnaire:: 1 A50` sets key `1`,
+max points `50` and difficulty `A`. If not set in the directive arguments, the max points will be set to
+the sum of the question points. Setting the difficulty is optional and it can be set
+even if the max points aren't defined in the argument. The questionnaire directive accepts the following options:
 
 * `submissions`: max submissions
 * `points-to-pass`: points to pass
 * `feedback`: If set, assumes the defaults for a feedback questionnaire
+* `title`: exercise title
 * `no-override`: If set, the conf.py override setting is ignored
 * `pick_randomly`: integer. Set the pick_randomly setting for the quiz
   (select N questions randomly on each load)
 * `category`: exercise category
+* `status`: exercise status (default "unlisted"). See available [statuses](#list-of-exercise-statuses).
+* `allow-assistant-viewing`: Allows assistants to view the submissions of the students.
+  Can be set to true or false. Overrides any options set in the conf.py or config.yaml files.
+* `allow-assistant-grading`: Allows assistants to grade the submissions of the students.
+  Can be set to true or false. Overrides any options set in the conf.py or config.yaml files.
 
 The contents of the questionnaire directive define the questions and possible
 instructions to students.
 
 The **question directives** `pick-one`, `pick-any`, and `freetext` take the points
-of the question as the first argument. The sum of the question points should
-be equal to the questionnaire max points.
+of the question as the first argument. If the questionnaire's max points are set, the sum
+of the question points should be equal to them.
 The question directives accept the following options:
 
 * `class`: CSS class
@@ -222,7 +229,16 @@ For example, `.. freetext:: 30 string-ignorews-ignorequotes`.
 The question directives may define instructions. After the instructions,
 the contents of the directive define the choices, the correct solution, and
 possible hints. The hints are targeted to specific choices and they are shown
-after answering. See the example below.
+after answering.
+
+The body of the `freetext` question is
+expected to be its model solution. However, the question instructions can be written
+inside the body before the model answer. The instructions and the model solution must
+be separated with an empty line.
+
+If the questionnaire has the `feedback` option set, `freetext`
+questions may not have a model solution and the body of the question is shown as the
+question instructions.
 
 ```
 .. questionnaire:: 1 A60
@@ -275,11 +291,15 @@ after answering. See the example below.
 
 ### 2. Feedback questionnaire
 
-A feedback questionnaire is basically just like a graded questionnaire, but with
-the `feedback` option it uses the feedback category and CSS class by default.
+A feedback questionnaire is almost like a graded questionnaire. When the `feedback` option is set,
+the questionnaire uses the feedback category and CSS class by default.
 The options `chapter-feedback`, `weekly-feedback`, `appendix-feedback`, and
 `course-feedback` use a different CSS class (with the same name as the option).
 If points are not specified, they are set to zero.
+The `feedback` option can be set only to the last questionnaire of the RST file.
+
+The freetext questions are not expected to have a model solution, in essence the
+body of the freetext question will be shown as the question instructions.
 
 The question directives `agree-item` and `agree-item-generate` create questions
 with a 1-5 Likert scale. They take a title as the only positional argument and
@@ -315,7 +335,7 @@ override = {
     :length: 100
     :height: 4
     :class: my-input-class
-    
+
     What do you think now?
 
   .. agree-item:: Did it work for you?
@@ -345,6 +365,9 @@ linking a YAML configuration file with the `config` option.
 Some settings may also be defined directly with the directive options.
 The directive will attach the exercise at this position in the content chapter.
 Its arguments define the exercise key and max points with the optional difficulty.
+The instructions can be written in the body of the submit directive. The body
+supports RST syntax. If the instructions field is also given in the config.yaml, the
+body of the submit directive will be prioritized.
 It accepts the following options:
 
 * `config`: path to the YAML configuration file
@@ -353,10 +376,15 @@ It accepts the following options:
 * `class`: CSS class(es)
 * `title`: exercise title
 * `category`: exercise category (default "submit")
+* `status`: exercise status (default "unlisted"). See available [statuses](#list-of-exercise-statuses).
 * `ajax`: If set, the A+ chapter does not attach any JavaScript event listeners
   to the exercise and the exercise JS may control the submission itself.
   See [the chapter content documentation](https://github.com/Aalto-LeTech/a-plus/blob/master/doc/CONTENT.md)
   (the HTML attribute `data-aplus-ajax`).
+* `allow-assistant-viewing`: Allows assistants to view the submissions of the students.
+  Can be set to true or false. Overrides any options set in the conf.py or config.yaml files.
+* `allow-assistant-grading`: Allows assistants to grade the submissions of the students.
+  Can be set to true or false. Overrides any options set in the conf.py or config.yaml files.
 * `quiz`: If set, the exercise feedback will take the place of the exercise instructions.
   This makes sense for questionnaires since their feedback contains the submission form.
   In RST, you would usually define questionnaires with the questionnaire directive,
@@ -371,6 +399,11 @@ It accepts the following options:
   the LTI service that must be configured in the A+ site beforehand.
 * `lti_resource_link_id`: LTI exercise key
 * `lti_context_id`: LTI course key
+* `lti_open_in_iframe`: Open the exercise in an iframe inside the A+ page instead of a new window.
+  This option does not take any parameters.
+* `lti_aplus_get_and_post`: The exercise uses the A+ protocol to connect to the service.
+  The LTI launch parameters are appended to the A+ protocol parameters. This does not work with standard LTI services.
+  This option does not take any parameters.
 
 [Radar service]: https://github.com/Aalto-LeTech/radar
 
@@ -378,6 +411,8 @@ It accepts the following options:
 .. submit:: 2 A100
   :submissions: 100
   :config: exercises/hello_python/config.yaml
+
+  This will be shown in aplus as the instructions.
 ```
 
 ### 4. External exercise (LTI)
@@ -387,8 +422,14 @@ The LTI service must be configured beforehand in A+ by an administrator.
 The `lti` option refers to the label of the LTI service.
 The `url` option may exclude the domain of the service URL since the domain
 must be equal to the URL defined in the LTI service anyway.
-The LTI parameters may be defined in the config.yaml file linked with
-the `config` option, thus it is not required to define them in RST.
+There are two ways to define LTI exercise:
+
+* Using the config.yaml file linked with the `config` option and defining LTI options there.
+  In this case, all LTI options written in the submit directive will be ignored.
+* Writing LTI options in the submit directive. Remark that in this case the submit directive must
+  not have the `config` option set.
+
+In LTI excercises, the instructions cannot be written in the body of the submit directive.
 
 ```
 .. submit:: 3 B50
@@ -475,6 +516,7 @@ More active element examples can be found at https://version.aalto.fi/gitlab/pii
                     active elements)
       :scale-size: no value; if this option is present, the output element
                    height will scale to match content that has a defined height
+      :status: exercise status (default "unlisted"). See available [statuses](#list-of-exercise-statuses).
 
 ### 8. Hidden block
 
@@ -498,15 +540,31 @@ A point of interest is mostly like a normal admonition ("coloured info box"), bu
 they are also linked to each other with next/previous links. The links enable
 the user to quickly navigate between the points of interest.
 
+Point of interests may also be used to generate separate lecture slides
+(not directly included in the A+ content chapters). This requires a separate
+tool called "presentation maker".
+
 ```
-.. point-of-interest:: name (unique id within the document)
-  :title: optional title text
-  :previous: name of previous point-of-interest (optional)
-  :next: name of next point-of-interest (optional)
+.. point-of-interest:: Title text
+  :id: unique id, if not supplied a random id will be generated
+  :previous: id of previous point-of-interest (optional)
+  :next: id of next point-of-interest (optional)
   :hidden: (if this flag is present, the content of this poi is hidden by default)
   :class: any additional css classes
+  :height: fixed height in pixels
+  :columns: relative width of each column (e.g. for three columns 2 2 3)
+  :bgimg: path to background image
+  :not_in_slides: a flag used with the presentation maker. This POI does not show in the slides if this is defined.
+  :not_in_book: If this flag is given, this POI does not appear in the A+ content chapter.
 
-  Content of point-of-interest here
+  Content of point-of-interest here.
+
+  Use ::newcol to start a new column:
+
+  ::newcol
+
+  New column starts here. If :columns: option not present columns of equal width will be created.
+  (The presentation maker slides do not support the newcol feature.)
 ```
 
 
@@ -577,7 +635,75 @@ This extension must be activated separately in the project conf.py
   res0: Int = 14
 ```
 
-### 13. Media directives
+### 13. Submittable ACOS exercises
+
+The custom directive acos-submit behaves almost identically to the normal
+submit directive. It is intended for exercises that are hosted outside the MOOC grader,
+such as the ACOS server. The directive option url should define the URL path of
+the exercise in the ACOS server. The URL domain is added automatically based on
+the configuration value `acos_submit_base_url` in conf.py. The acos-submit
+directive also automatically uses the `ajax` flag of the submit directive.
+
+The usage:
+
+```
+In conf.py:
+  acos_submit_base_url = 'https://acos.cs.aalto.fi'
+  acos_submit_base_url = 'http://172.21.0.4:3000'
+
+In RST:
+.. acos-submit:: somekey 100
+  :title: My title
+  :url: /aplus/draganddrop/draganddrop-example/revealdemo
+```
+
+### 14. HTML div elements
+
+The div directive can be used to insert basic `<div>` html elements into the
+generated document. This is useful for styling and other similar reasons.
+
+Any arguments given to the directive will be added as classes to the resulting
+element.
+
+This extension is originally from
+https://github.com/dnnsoftware/Docs/blob/master/common/ext/div.py
+and is licensed under the MIT license (see source file comments for the
+license text).
+
+Usage example:
+
+```
+.. div:: css-class-1 css-class-2
+
+  Element contents (_parsed_ as **RST**). Note the blank line and the
+  indentation.
+```
+
+### 15. CSS styled topics
+
+Directive that inserts `topic` elements that are more friendly to css styling
+using the bootstrap framework. Usage:
+
+```
+.. styled-topic::
+  :class: css-class-1 css-class-2
+
+  Topic must include content. All content is **parsed** _normally_ as RST.
+
+  Note the blank line between the directive and its content, and the
+  indentation.
+```
+
+An optional `:class:` option can be used to insert other css classes to the
+resulting `<div>` element.
+
+This extension also registers a conf.py value of
+`'bootstrap_styled_topic_classes'`. It can be used to set default classes that are
+added to all styled-topic directives. The default value is `dl-horizontal topic`
+where `dl-horizontal` is useful for inserting bootstrap styled `<dl>` elements
+into the div.
+
+### 16. Media directives
 
 The media directives were developed basically for a single course and they
 may not be quite reusable for other usecases, but they are listed here anyway.
@@ -622,4 +748,13 @@ the mp4 or webm format. The id argument is the filename without the extension.
   :frame-height: 500
   :frame-width: 850
 ```
+### List of exercise statuses
 
+There are 6 possible statuses for exercises:
+
+* ready: Visible exercise listed in table of contents.
+* unlisted (default): Unlisted in table of contents, otherwise same as ready.
+* hidden: Hidden from non course staff.
+* enrollment: Questions for students when they enroll to a course.
+* enrollment_ext: Same as enrollment but for external students.
+* maintenance: Hides the exercise description and prevents submissions.

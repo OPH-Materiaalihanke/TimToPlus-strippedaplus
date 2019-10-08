@@ -34,7 +34,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
 
     {%- if theme_include_mathjax %}
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
     {%- endif %}
 
     <link rel="stylesheet" href="https://plus.cs.hut.fi/static/css/main.css" />
@@ -57,7 +57,6 @@
     {%- endfor %#}
 
     {%- block extrahead %} {% endblock %}
-    {%- block footer %} {% endblock %}
   </head>
 
   <body role="document">
@@ -237,6 +236,9 @@
                   <div class="content">
                     {%- block content %} {%- block document %} {%- block body %} {% endblock %} {%- endblock %} {%- endblock %}
                   </div>
+                  {# The footer is included in A+ chapter pages since it is defined inside div#exercise. #}
+                  {# Scripts do not need the data-aplus attribute here. #}
+                  {%- block footer %} {% endblock %}
                 </div>
               </div>
               {%- if not theme_use_wide_column|tobool %}

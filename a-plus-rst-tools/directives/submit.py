@@ -6,16 +6,17 @@ import os.path
 from docutils.parsers.rst import directives
 from docutils import nodes
 from sphinx.errors import SphinxError
+from sphinx.util.nodes import nested_parse_with_titles
 
 import aplus_nodes
 import lib.translations as translations
 import lib.yaml_writer as yaml_writer
 from lib.yaml_writer import ensure_unicode
-from directives.abstract_exercise import AbstractExercise
+from directives.abstract_exercise import AbstractExercise, choice_truefalse
 
 
 class SubmitForm(AbstractExercise):
-    has_content = False
+    has_content = True
     option_spec = {
         'class' : directives.class_option,
         'quiz': directives.flag,
@@ -28,9 +29,14 @@ class SubmitForm(AbstractExercise):
         'lti': directives.unchanged,
         'lti_context_id': directives.unchanged,
         'lti_resource_link_id': directives.unchanged,
+        'lti_aplus_get_and_post': directives.flag,
+        'lti_open_in_iframe': directives.flag,
         'radar_tokenizer': directives.unchanged,
         'radar_minimum_match_tokens': directives.unchanged,
         'category': directives.unchanged,
+        'status': directives.unchanged,
+        'allow-assistant-viewing': choice_truefalse,
+        'allow-assistant-grading': choice_truefalse,
     }
 
     def run(self):
@@ -56,9 +62,6 @@ class SubmitForm(AbstractExercise):
         if 'ajax' in self.options:
             args[u'data-aplus-ajax'] = u'yes'
         node = aplus_nodes.html(u'div', args)
-        paragraph = aplus_nodes.html(u'p', {})
-        paragraph.append(nodes.Text(translations.get(env, 'submit_placeholder')))
-        node.append(paragraph)
 
         key_title = u"{} {}".format(translations.get(env, 'exercise'), key)
 
@@ -79,6 +82,10 @@ class SubmitForm(AbstractExercise):
                     u'lti_context_id': ensure_unicode(self.options.get('lti_context_id', u'')),
                     u'lti_resource_link_id': ensure_unicode(self.options.get('lti_resource_link_id', u'')),
                 })
+                if 'lti_aplus_get_and_post' in self.options:
+                    data.update({u'lti_aplus_get_and_post': True})
+                if 'lti_open_in_iframe' in self.options:
+                    data.update({u'lti_open_in_iframe': True})
             config_title = None
 
         config_title = self.options.get('title', config_title)
@@ -102,6 +109,24 @@ class SubmitForm(AbstractExercise):
             u'max_group_size': data.get('max_group_size', env.config.default_max_group_size),
             u'points_to_pass': self.options.get('points-to-pass', data.get('points_to_pass', 0)),
         })
+        self.set_assistant_permissions(data)
+
+        if self.content:
+            self.assert_has_content()
+            nested_parse_with_titles(self.state, self.content, node)
+            # Sphinx can not compile the nested RST into HTML at this stage, hence
+            # the HTML instructions defined in this directive body are added to
+            # the exercise YAML file only at the end of the build. Sphinx calls
+            # the visit functions of the nodes in the last writing phase.
+            # The instructions are added to the YAML file in the depart_html
+            # function in aplus_nodes.py.
+        else:
+            paragraph = aplus_nodes.html(u'p', {})
+            paragraph.append(nodes.Text(translations.get(env, 'submit_placeholder')))
+            node.append(paragraph)
+
+        data.setdefault('status', self.options.get('status', 'unlisted'))
+
         if category in override:
             data.update(override[category])
             if 'url' in data:

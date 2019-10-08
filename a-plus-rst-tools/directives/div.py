@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 This directive can be used to insert basic <div> html elements into the
 generated document. This is useful for styling and other similar reasons.
@@ -46,12 +47,6 @@ from docutils.parsers.rst import directives
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-
-def setup(app):
-    app.add_node(DivNode, html=(DivNode.visit_div, DivNode.depart_div))
-    app.add_directive('div', DivDirective)
-    return {'version': '0.1'}
 
 class DivNode(nodes.General, nodes.Element):
 

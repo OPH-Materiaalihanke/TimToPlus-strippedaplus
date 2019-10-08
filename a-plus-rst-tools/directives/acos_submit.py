@@ -1,7 +1,4 @@
-from sphinx.errors import SphinxError
-
-from aplus_setup import SubmitForm
-
+# -*- coding: utf-8 -*-
 """
 acos-submit is a custom directive that behaves almost identically to the normal
 submit directive. It is intended for exercises that are hosted outside the MOOC grader,
@@ -10,11 +7,8 @@ the exercise in the ACOS server. The URL domain is added automatically based on
 the configuration value "acos_submit_base_url" (in conf.py). The acos-submit
 directive also automatically uses the "ajax" flag of the submit directive.
 """
-
-def setup(app):
-    app.add_directive('acos-submit', ACOSSubmitDirective)
-    app.add_config_value('acos_submit_base_url', 'http://172.21.0.2:3000', 'html')
-    # the default URL domain is the IP address of the container used in local testing
+from sphinx.errors import SphinxError
+from .submit import SubmitForm
 
 class ACOSSubmitDirective(SubmitForm):
     def run(self):
@@ -35,4 +29,3 @@ class ACOSSubmitDirective(SubmitForm):
         self.options['url'] = env.config.acos_submit_base_url + self.options['url']
 
         return super().run()
-

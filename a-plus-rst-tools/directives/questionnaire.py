@@ -10,7 +10,7 @@ from sphinx.util.nodes import nested_parse_with_titles
 import aplus_nodes
 import lib.translations as translations
 import lib.yaml_writer as yaml_writer
-from directives.abstract_exercise import AbstractExercise
+from directives.abstract_exercise import AbstractExercise, choice_truefalse
 
 
 class Questionnaire(AbstractExercise):
@@ -28,6 +28,9 @@ class Questionnaire(AbstractExercise):
         'points-to-pass': directives.nonnegative_int,
         'title': directives.unchanged,
         'category': directives.unchanged,
+        'status': directives.unchanged,
+        'allow-assistant-viewing': choice_truefalse,
+        'allow-assistant-grading': choice_truefalse,
     }
 
     def run(self):
@@ -69,6 +72,7 @@ class Questionnaire(AbstractExercise):
 
         env.questionnaire_is_feedback = is_feedback
         env.question_count = 0
+        env.aplus_quiz_total_points = 0
 
         # Create document elements.
         node = aplus_nodes.html(u'div', {
@@ -94,7 +98,6 @@ class Questionnaire(AbstractExercise):
         data = {
             u'key': name,
             u'category': category,
-            u'max_points': points,
             u'difficulty': difficulty or '',
             u'max_submissions': self.options.get('submissions', 0 if is_feedback else env.config.questionnaire_default_submissions),
             u'min_group_size': 1 if is_feedback else env.config.default_min_group_size,
@@ -102,12 +105,29 @@ class Questionnaire(AbstractExercise):
             u'points_to_pass': self.options.get('points-to-pass', 0),
             u'feedback': is_feedback,
             u'view_type': u'access.types.stdsync.createForm',
-            u'title|i18n': translations.opt('feedback') if is_feedback else translations.opt('exercise', postfix=u" {}".format(key)),
+            u'status': self.options.get('status', 'unlisted'),
             u'fieldgroups': [{
                 u'title': '',
                 u'fields': (u'#!children', None),
             }],
         }
+        self.set_assistant_permissions(data)
+
+        points_set_in_arguments = False
+        if len(self.arguments) == 2 and difficulty != self.arguments[1]:
+            points_set_in_arguments = True
+
+        if points_set_in_arguments and env.aplus_quiz_total_points != points:
+            source, line = self.state_machine.get_source_and_line(self.lineno)
+            raise SphinxError(source + ": line " + str(line) +
+            "\nThe points of the questions in the questionnaire must add up to the total points of the questionnaire!")
+        data['max_points'] = env.aplus_quiz_total_points
+
+        if 'title' in self.options:
+            data['title'] = self.options.get('title')
+        else:
+            data[u'title|i18n'] = translations.opt('feedback') if is_feedback else translations.opt('exercise', postfix=u" {}".format(key))
+
         if not 'no-override' in self.options and category in override:
             data.update(override[category])
             if 'url' in data:
@@ -167,6 +187,7 @@ class QuestionMixin:
 
         # Add configuration.
         if points and len(self.arguments) > 0:
+            env.aplus_quiz_total_points += int(self.arguments[0])
             data[u'points'] = int(self.arguments[0])
         if 'required' in self.options:
             data[u'required'] = True

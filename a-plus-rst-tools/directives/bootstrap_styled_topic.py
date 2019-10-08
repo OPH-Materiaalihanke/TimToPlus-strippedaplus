@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Directive that inserts "topic" elements that are more friendly to css styling
 using the bootstrap framework. Usage:
@@ -19,15 +20,9 @@ added to all styled-topic directives. The default value is "dl-horizontal topic"
 where "dl-horizontal" is useful for inserting bootstrap styled <dl> elements
 into the div.
 '''
-from div import DivNode
+from .div import DivNode
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
-
-
-def setup(app):
-    app.add_directive('styled-topic', StyledTopicDirective)
-    app.add_config_value('bootstrap_styled_topic_classes', 'dl-horizontal topic', 'html')
-
 
 class StyledTopicDirective(Directive):
 

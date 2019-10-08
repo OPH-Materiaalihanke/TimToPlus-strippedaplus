@@ -32,6 +32,15 @@ static_host = os.environ.get('STATIC_CONTENT_HOST')
 #acos_submit_base_url = 'https://acos.cs.aalto.fi'
 acos_submit_base_url = 'http://172.21.0.4:3000'
 
+# The JavaScript code used by the enrollment questionnaire is hosted in the course repo,
+# so we need to know the course key in order to craft the URL of the JS.
+# This RST substitution is used to insert the script in the questionnaire RST code.
+course_key = os.environ.get('COURSE_KEY', 'default')
+rst_prolog = '''.. |enroll-js-script| raw:: html
+
+  <script src="/static/{course_key}/_static/enrollmentquiz.js"></script>
+'''.format(course_key=course_key)
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -39,7 +48,6 @@ acos_submit_base_url = 'http://172.21.0.4:3000'
 
 sys.path.append(os.path.abspath('a-plus-rst-tools'))
 sys.path.append(os.path.abspath('a-plus-rst-tools/directives'))
-sys.path.append(os.path.abspath('extensions'))
 
 # -- General configuration ------------------------------------------------
 
@@ -54,9 +62,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'aplus_setup',
-    'bootstrap_styled_topic',
-    'div',
-    'acos_submit',
+    'media',
+    'point_of_interest',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -102,7 +109,7 @@ language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'exercises/solutions', '_data']
+exclude_patterns = ['_build', 'exercises/solutions', '_data', 'enrollment']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
