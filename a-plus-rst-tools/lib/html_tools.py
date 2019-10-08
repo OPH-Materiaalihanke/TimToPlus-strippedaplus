@@ -99,7 +99,7 @@ def rewrite_elements(content, tag, attr, path, root, q1, static_host, q2, append
                 # Other links.
                 elif static_host:
                     j = m.start('val')
-                    out += content[i:j] + static_host + my_path.replace('\\','/')
+                    out += content[i:j] + static_host + re.sub(r'\\[^\"\']','/',my_path)# my_path.replace('\\','/')
                     i = m.end('val')
 
                 elif dir_name.endswith('yaml') and yaml_append and not out.endswith(yaml_append):
